@@ -4,10 +4,15 @@
   import PreviewPane from "./lib/components/PreviewPane.svelte";
   import { bootstrapApp } from "./lib/ipc/client";
   import { appState, loadBootstrap, selectedCommand } from "./lib/stores/app-shell";
+  let loadError: string | null = null;
 
   onMount(async () => {
-    const payload = await bootstrapApp();
-    loadBootstrap(payload);
+    try {
+      const payload = await bootstrapApp();
+      loadBootstrap(payload);
+    } catch (error) {
+      loadError = error instanceof Error ? error.message : "Failed to load the application.";
+    }
   });
 </script>
 
@@ -39,15 +44,24 @@
       </div>
     </header>
 
-    <section class="grid flex-1 gap-3 lg:grid-cols-[400px_minmax(0,1fr)]">
-      <CommandPalette commandCount={$appState.health.commandCount} />
-      <PreviewPane
-        command={$selectedCommand}
-        health={$appState.health}
-        settings={$appState.settings}
-        profiles={$appState.profiles}
-        recentHistory={$appState.recentHistory}
-      />
-    </section>
+    {#if loadError}
+      <section class="flex flex-1 items-center justify-center rounded-lg border border-signal-danger/40 bg-chrome-900 px-6 py-8">
+        <div class="max-w-2xl text-sm text-signal-danger">{loadError}</div>
+      </section>
+    {:else}
+      <section class="grid flex-1 gap-3 lg:grid-cols-[400px_minmax(0,1fr)]">
+        <div class="min-w-0">
+          <CommandPalette commandCount={$appState.health.commandCount} />
+        </div>
+        <div class="min-w-0">
+          <PreviewPane
+            command={$selectedCommand}
+            health={$appState.health}
+            settings={$appState.settings}
+            recentHistory={$appState.recentHistory}
+          />
+        </div>
+      </section>
+    {/if}
   </section>
 </main>

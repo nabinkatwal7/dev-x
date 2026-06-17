@@ -4,6 +4,7 @@
     executeSelectedCommand,
     filteredCommands,
     query,
+    selectCommand,
     selectedCommand,
     selectedCommandId
   } from "../stores/app-shell";
@@ -12,7 +13,7 @@
   export let commandCount = 0;
 
   function choose(command: CommandAction) {
-    selectedCommandId.set(command.id);
+    selectCommand(command);
   }
 
   async function runSelected() {

@@ -1,7 +1,6 @@
 mod app;
 mod commands;
 mod error;
-mod lib_fallback;
 mod models;
 mod services;
 mod state;
@@ -20,7 +19,8 @@ pub fn run() {
             commands::bootstrap_app,
             commands::update_app_settings,
             commands::record_command_execution,
-            commands::set_active_profile
+            commands::set_active_profile,
+            commands::execute_command
         ])
         .run(tauri::generate_context!())
         .expect("error while running DevForge");

@@ -9,6 +9,7 @@ pub struct CommandAction {
     pub category: CommandCategory,
     pub tags: Vec<String>,
     pub shortcut: Option<String>,
+    pub accepts_input: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -84,4 +85,29 @@ pub struct UpdateSettingsPayload {
     pub launch_hotkey: String,
     pub close_to_tray: bool,
     pub history_limit: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecuteCommandPayload {
+    pub command_id: String,
+    pub input: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandExecutionResult {
+    pub command_id: String,
+    pub title: String,
+    pub output: String,
+    pub status: CommandExecutionStatus,
+    pub summary: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CommandExecutionStatus {
+    Success,
+    Error,
+    Info,
 }

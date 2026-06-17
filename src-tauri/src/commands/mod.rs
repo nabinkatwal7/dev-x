@@ -1,21 +1,20 @@
 use tauri::State;
 
 use crate::{
-    lib_fallback,
     models::{
-        AppSettings, BootstrapPayload, CommandHistoryEntry, RecordCommandExecutionPayload,
-        UpdateSettingsPayload, WorkspaceProfile,
+        AppSettings, BootstrapPayload, CommandExecutionResult, CommandHistoryEntry, ExecuteCommandPayload,
+        RecordCommandExecutionPayload, UpdateSettingsPayload, WorkspaceProfile,
     },
     state::AppState,
 };
 
 #[tauri::command]
-pub fn bootstrap_app(state: State<'_, AppState>) -> BootstrapPayload {
+pub fn bootstrap_app(state: State<'_, AppState>) -> Result<BootstrapPayload, String> {
     let commands = state.command_registry.commands().to_vec();
     state
         .storage
         .load_bootstrap_payload(commands, false)
-        .unwrap_or_else(|_| lib_fallback::bootstrap_payload())
+        .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -48,5 +47,16 @@ pub fn set_active_profile(
     state
         .storage
         .set_active_profile(&profile_id)
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn execute_command(
+    state: State<'_, AppState>,
+    payload: ExecuteCommandPayload,
+) -> Result<CommandExecutionResult, String> {
+    state
+        .command_executor
+        .execute(payload)
         .map_err(|error| error.to_string())
 }

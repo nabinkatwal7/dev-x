@@ -15,6 +15,7 @@ export interface CommandAction {
   category: CommandCategory;
   tags: string[];
   shortcut?: string;
+  acceptsInput: boolean;
 }
 
 export interface CommandPreview {
@@ -49,6 +50,16 @@ export interface CommandHistoryEntry {
   commandId: string;
   queryText: string;
   executedAt: string;
+}
+
+export type CommandExecutionStatus = "success" | "error" | "info";
+
+export interface CommandExecutionResult {
+  commandId: string;
+  title: string;
+  output: string;
+  status: CommandExecutionStatus;
+  summary: string;
 }
 
 export interface BootstrapPayload {

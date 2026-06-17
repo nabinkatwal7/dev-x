@@ -7,10 +7,5 @@ pub fn default_profile_name() -> &'static str {
 }
 
 pub fn default_profile_categories() -> Vec<CommandCategory> {
-    vec![
-        CommandCategory::Core,
-        CommandCategory::Data,
-        CommandCategory::Clipboard,
-        CommandCategory::System,
-    ]
+    vec![CommandCategory::Data]
 }

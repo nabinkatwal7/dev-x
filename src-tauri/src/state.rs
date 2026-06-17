@@ -2,12 +2,15 @@ use std::sync::Arc;
 
 use crate::{
     error::AppError,
-    services::{command_registry::CommandRegistry, storage::StorageService},
+    services::{
+        command_executor::CommandExecutor, command_registry::CommandRegistry, storage::StorageService,
+    },
 };
 
 #[derive(Clone)]
 pub struct AppState {
     pub command_registry: Arc<CommandRegistry>,
+    pub command_executor: Arc<CommandExecutor>,
     pub storage: Arc<StorageService>,
 }
 
@@ -17,6 +20,7 @@ impl AppState {
 
         Ok(Self {
             command_registry: Arc::new(CommandRegistry::new()),
+            command_executor: Arc::new(CommandExecutor::new()),
             storage: Arc::new(storage),
         })
     }
