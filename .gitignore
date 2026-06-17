@@ -1,0 +1,13 @@
+node_modules
+dist
+.svelte-kit
+.vite
+target
+src-tauri/target
+*.db
+*.db-shm
+*.db-wal
+.env
+.env.*
+.DS_Store
+Thumbs.db

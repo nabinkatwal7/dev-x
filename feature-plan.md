@@ -25,7 +25,7 @@ Developers lose hours every week to **micro-frictions**: opening browser tabs to
 
 ---
 
-## Global Framework Matrix (100 Major Features)
+## Global Framework Matrix
 
 The following matrix maps out the 100 mandatory features across 10 functional pillars required for a complete minimum viable product and immediate iteration roadmap.
 
