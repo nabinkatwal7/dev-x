@@ -37,6 +37,7 @@ pub struct BootstrapPayload {
     pub settings: AppSettings,
     pub profiles: Vec<WorkspaceProfile>,
     pub recent_history: Vec<CommandHistoryEntry>,
+    pub command_usage: Vec<CommandUsageEntry>,
     pub commands: Vec<CommandAction>,
 }
 
@@ -110,4 +111,11 @@ pub enum CommandExecutionStatus {
     Success,
     Error,
     Info,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandUsageEntry {
+    pub command_id: String,
+    pub execution_count: u32,
 }

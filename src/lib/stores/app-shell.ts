@@ -27,6 +27,7 @@ const initialState: BootstrapPayload = {
   },
   profiles: [],
   recentHistory: [],
+  commandUsage: [],
   commands: []
 };
 
@@ -40,7 +41,7 @@ export const commandRunning = writable(false);
 
 export const filteredCommands = derived(
   [appState, query],
-  ([$appState, $query]) => rankCommands($appState.commands, $query)
+  ([$appState, $query]) => rankCommands($appState.commands, $appState.commandUsage, $query)
 );
 
 export const selectedCommand = derived(
@@ -68,7 +69,11 @@ export async function executeSelectedCommand(command: CommandAction | null, curr
     commandResult.set(result);
     const historyQuery = currentQuery.trim() || summarizeExecutionInput(input, command.id);
     const recentHistory = await recordCommandExecution(command.id, historyQuery);
-    appState.update((state) => ({ ...state, recentHistory }));
+    appState.update((state) => ({
+      ...state,
+      recentHistory,
+      commandUsage: incrementCommandUsage(state.commandUsage, command.id)
+    }));
   } catch (error) {
     const message = error instanceof Error ? error.message : "Command execution failed.";
     commandError.set(message);
@@ -109,33 +114,62 @@ export function updateCommandInput(value: string) {
   commandInput.set(value);
 }
 
-function rankCommands(commands: CommandAction[], rawQuery: string) {
+function rankCommands(
+  commands: CommandAction[],
+  usageEntries: BootstrapPayload["commandUsage"],
+  rawQuery: string
+) {
   const queryValue = rawQuery.trim().toLowerCase();
+  const usageMap = new Map(usageEntries.map((entry) => [entry.commandId, entry.executionCount]));
+
   if (!queryValue) {
-    return commands;
+    return [...commands].sort((left, right) => {
+      const usageDelta = (usageMap.get(right.id) ?? 0) - (usageMap.get(left.id) ?? 0);
+      if (usageDelta !== 0) return usageDelta;
+      return left.title.localeCompare(right.title);
+    });
   }
 
   return [...commands]
     .map((command) => ({
       command,
-      score: scoreCommand(command, queryValue)
+      score: scoreCommand(command, queryValue, usageMap.get(command.id) ?? 0)
     }))
     .filter((entry) => entry.score > 0)
     .sort((left, right) => right.score - left.score)
     .map((entry) => entry.command);
 }
 
-function scoreCommand(command: CommandAction, queryValue: string) {
+function scoreCommand(command: CommandAction, queryValue: string, usageCount: number) {
   const title = command.title.toLowerCase();
   const subtitle = command.subtitle.toLowerCase();
-  const tags = command.tags.join(" ").toLowerCase();
+  const tagText = command.tags.join(" ").toLowerCase();
 
-  if (title === queryValue) return 100;
-  if (title.startsWith(queryValue)) return 80;
-  if (title.includes(queryValue)) return 60;
-  if (tags.includes(queryValue)) return 30;
-  if (subtitle.includes(queryValue)) return 15;
-  return 0;
+  let score = 0;
+
+  if (title === queryValue) score += 1000;
+  else if (title.replaceAll(" ", "") === queryValue.replaceAll(" ", "")) score += 920;
+  else if (title.startsWith(queryValue)) score += 760;
+  else if (title.includes(queryValue)) score += 620;
+
+  const titleFuzzy = subsequenceScore(title, queryValue);
+  if (titleFuzzy > 0) score += titleFuzzy;
+
+  for (const tag of command.tags) {
+    const lowerTag = tag.toLowerCase();
+    if (lowerTag === queryValue) score += 220;
+    else if (lowerTag.startsWith(queryValue)) score += 150;
+    else if (lowerTag.includes(queryValue)) score += 110;
+  }
+
+  const tagFuzzy = subsequenceScore(tagText, queryValue);
+  if (tagFuzzy > 0) score += Math.floor(tagFuzzy * 0.35);
+
+  if (subtitle.includes(queryValue)) score += 70;
+  if (score === 0) return 0;
+
+  score += Math.min(usageCount * 18, 180);
+  return score;
 }
 
 function defaultCommandInput(commandId?: string | null) {
@@ -151,4 +185,47 @@ function defaultCommandInput(commandId?: string | null) {
 function summarizeExecutionInput(input: string, commandId: string) {
   const firstLine = input.trim().split("\n")[0]?.slice(0, 80);
   return firstLine || commandId;
+}
+
+function subsequenceScore(haystack: string, needle: string) {
+  let score = 0;
+  let haystackIndex = 0;
+  let lastMatchIndex = -2;
+
+  for (const char of needle) {
+    const foundIndex = haystack.indexOf(char, haystackIndex);
+    if (foundIndex === -1) return 0;
+
+    score += 24;
+
+    if (foundIndex === lastMatchIndex + 1) {
+      score += 18;
+    }
+
+    if (foundIndex === 0 || haystack[foundIndex - 1] === " " || haystack[foundIndex - 1] === "-") {
+      score += 12;
+    }
+
+    lastMatchIndex = foundIndex;
+    haystackIndex = foundIndex + 1;
+  }
+
+  score -= Math.max(haystack.length - needle.length, 0);
+  return Math.max(score, 1);
+}
+
+function incrementCommandUsage(
+  usageEntries: BootstrapPayload["commandUsage"],
+  commandId: string
+): BootstrapPayload["commandUsage"] {
+  const existing = usageEntries.find((entry) => entry.commandId === commandId);
+  if (!existing) {
+    return [...usageEntries, { commandId, executionCount: 1 }];
+  }
+
+  return usageEntries.map((entry) =>
+    entry.commandId === commandId
+      ? { ...entry, executionCount: entry.executionCount + 1 }
+      : entry
+  );
 }

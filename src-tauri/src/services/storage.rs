@@ -7,7 +7,7 @@ use crate::{
     app,
     error::AppError,
     models::{
-        AppHealth, AppSettings, BootstrapPayload, CommandAction, CommandHistoryEntry,
+        AppHealth, AppSettings, BootstrapPayload, CommandAction, CommandHistoryEntry, CommandUsageEntry,
         RecordCommandExecutionPayload, UpdateSettingsPayload, WorkspaceProfile,
     },
 };
@@ -50,6 +50,7 @@ impl StorageService {
             settings: settings.clone(),
             profiles: self.list_profiles()?,
             recent_history: self.list_recent_history(settings.history_limit.min(10))?,
+            command_usage: self.command_usage()?,
             commands,
         })
     }
@@ -256,6 +257,24 @@ impl StorageService {
 
     fn connect(&self) -> Result<Connection, AppError> {
         Connection::open(&self.db_path).map_err(Into::into)
+    }
+
+    fn command_usage(&self) -> Result<Vec<CommandUsageEntry>, AppError> {
+        let connection = self.connect()?;
+        let mut statement = connection.prepare(
+            "SELECT command_id, COUNT(*) as execution_count
+             FROM command_history
+             GROUP BY command_id",
+        )?;
+
+        let rows = statement.query_map([], |row| {
+            Ok(CommandUsageEntry {
+                command_id: row.get(0)?,
+                execution_count: row.get(1)?,
+            })
+        })?;
+
+        rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 }
 

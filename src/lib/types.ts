@@ -52,6 +52,11 @@ export interface CommandHistoryEntry {
   executedAt: string;
 }
 
+export interface CommandUsageEntry {
+  commandId: string;
+  executionCount: number;
+}
+
 export type CommandExecutionStatus = "success" | "error" | "info";
 
 export interface CommandExecutionResult {
@@ -67,5 +72,6 @@ export interface BootstrapPayload {
   settings: AppSettings;
   profiles: WorkspaceProfile[];
   recentHistory: CommandHistoryEntry[];
+  commandUsage: CommandUsageEntry[];
   commands: CommandAction[];
 }
