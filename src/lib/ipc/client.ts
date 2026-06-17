@@ -1,17 +1,33 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { BootstrapPayload } from "../types";
+import type { AppSettings, BootstrapPayload, CommandHistoryEntry, WorkspaceProfile } from "../types";
 
 const mockPayload: BootstrapPayload = {
   health: {
     profile: {
       id: "default",
       name: "Default Workspace",
-      enabledCategories: ["core", "data", "clipboard", "system"]
+      enabledCategories: ["core", "data", "clipboard", "system"],
+      isDefault: true
     },
     commandCount: 4,
     trayReady: false,
     storageReady: false
   },
+  settings: {
+    themeMode: "system",
+    launchHotkey: "Alt+Space",
+    closeToTray: false,
+    historyLimit: 50
+  },
+  profiles: [
+    {
+      id: "default",
+      name: "Default Workspace",
+      enabledCategories: ["core", "data", "clipboard", "system"],
+      isDefault: true
+    }
+  ],
+  recentHistory: [],
   commands: [
     {
       id: "core.open-command-palette",
@@ -51,4 +67,18 @@ export async function bootstrapApp(): Promise<BootstrapPayload> {
   } catch {
     return mockPayload;
   }
+}
+
+export async function updateAppSettings(settings: AppSettings) {
+  return invoke<AppSettings>("update_app_settings", { payload: settings });
+}
+
+export async function recordCommandExecution(commandId: string, queryText: string) {
+  return invoke<CommandHistoryEntry[]>("record_command_execution", {
+    payload: { commandId, queryText }
+  });
+}
+
+export async function setActiveProfile(profileId: string) {
+  return invoke<WorkspaceProfile>("set_active_profile", { profileId });
 }

@@ -1,17 +1,27 @@
 import { derived, writable } from "svelte/store";
-import type { BootstrapPayload, CommandAction } from "../types";
+import { recordCommandExecution, setActiveProfile, updateAppSettings } from "../ipc/client";
+import type { AppSettings, BootstrapPayload, CommandAction, WorkspaceProfile } from "../types";
 
 const initialState: BootstrapPayload = {
   health: {
     profile: {
       id: "loading",
       name: "Loading",
-      enabledCategories: ["core"]
+      enabledCategories: ["core"],
+      isDefault: false
     },
     commandCount: 0,
     trayReady: false,
     storageReady: false
   },
+  settings: {
+    themeMode: "system",
+    launchHotkey: "Alt+Space",
+    closeToTray: false,
+    historyLimit: 50
+  },
+  profiles: [],
+  recentHistory: [],
   commands: []
 };
 
@@ -34,6 +44,53 @@ export function loadBootstrap(payload: BootstrapPayload) {
   appState.set(payload);
   const [first] = payload.commands;
   selectedCommandId.set(first?.id ?? null);
+}
+
+export async function executeSelectedCommand(command: CommandAction | null, currentQuery: string) {
+  if (!command) return;
+
+  try {
+    const recentHistory = await recordCommandExecution(command.id, currentQuery);
+    appState.update((state) => ({ ...state, recentHistory }));
+  } catch {
+    appState.update((state) => ({
+      ...state,
+      recentHistory: [
+        {
+          id: Date.now(),
+          commandId: command.id,
+          queryText: currentQuery,
+          executedAt: "local-fallback"
+        },
+        ...state.recentHistory
+      ].slice(0, 10)
+    }));
+  }
+}
+
+export async function saveSettings(settings: AppSettings) {
+  try {
+    const saved = await updateAppSettings(settings);
+    appState.update((state) => ({ ...state, settings: saved }));
+  } catch {
+    appState.update((state) => ({ ...state, settings }));
+  }
+}
+
+export async function activateProfile(profile: WorkspaceProfile) {
+  try {
+    const savedProfile = await setActiveProfile(profile.id);
+    appState.update((state) => ({
+      ...state,
+      health: { ...state.health, profile: savedProfile },
+      profiles: state.profiles.map((item) => (item.id === savedProfile.id ? savedProfile : item))
+    }));
+  } catch {
+    appState.update((state) => ({
+      ...state,
+      health: { ...state.health, profile }
+    }));
+  }
 }
 
 function rankCommands(commands: CommandAction[], rawQuery: string) {

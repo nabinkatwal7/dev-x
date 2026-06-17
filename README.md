@@ -56,7 +56,8 @@ This repository now contains the Phase 1 architecture scaffold:
 
 - The frontend is organized around a command-driven shell rather than feature-specific pages.
 - Backend responsibilities are split into `commands`, `services`, `state`, and `models` so upcoming utilities can be added as isolated modules.
-- `bootstrap_app` is the first typed IPC contract. It returns app health, workspace profile, and command metadata to let the shell render before any concrete tool modules exist.
+- `bootstrap_app` now hydrates the shell from SQLite-backed state, including the active workspace profile, persistent app settings, and recent command history.
+- The storage boundary lives in `src-tauri/src/services/storage.rs` and initializes schema plus default records on startup.
 
 ## Next recommended slices
 

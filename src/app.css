@@ -1,16 +1,20 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   color-scheme: dark;
-  font-family: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(88, 196, 220, 0.16), transparent 28%),
-    linear-gradient(180deg, #0b1015 0%, #101722 55%, #0d1117 100%);
+  font-family:
+    "Fira Code",
+    "SF Mono",
+    "Cascadia Code",
+    "JetBrains Mono",
+    "Consolas",
+    ui-monospace,
+    monospace;
+  background: #0d1117;
   color: #e5edf9;
+  font-variant-ligatures: contextual;
 }
 
 html,
@@ -23,11 +27,17 @@ body,
 
 body {
   min-height: 100vh;
+  background: #0d1117;
 }
 
 button,
 input {
   font: inherit;
+}
+
+input,
+textarea {
+  caret-color: #58c4dc;
 }
 
 * {

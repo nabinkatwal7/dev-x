@@ -13,13 +13,16 @@
     "windows": [
       {
         "title": "DevForge",
+        "theme": "Dark",
         "width": 1440,
         "height": 920,
         "minWidth": 1180,
         "minHeight": 720,
         "resizable": true,
         "decorations": true,
-        "center": true
+        "center": true,
+        "hiddenTitle": true,
+        "titleBarStyle": "Transparent"
       }
     ],
     "security": {
@@ -29,6 +32,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
   }
 }

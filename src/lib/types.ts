@@ -27,6 +27,7 @@ export interface WorkspaceProfile {
   id: string;
   name: string;
   enabledCategories: CommandCategory[];
+  isDefault: boolean;
 }
 
 export interface AppHealth {
@@ -36,7 +37,24 @@ export interface AppHealth {
   storageReady: boolean;
 }
 
+export interface AppSettings {
+  themeMode: string;
+  launchHotkey: string;
+  closeToTray: boolean;
+  historyLimit: number;
+}
+
+export interface CommandHistoryEntry {
+  id: number;
+  commandId: string;
+  queryText: string;
+  executedAt: string;
+}
+
 export interface BootstrapPayload {
   health: AppHealth;
+  settings: AppSettings;
+  profiles: WorkspaceProfile[];
+  recentHistory: CommandHistoryEntry[];
   commands: CommandAction[];
 }

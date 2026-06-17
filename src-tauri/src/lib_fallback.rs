@@ -1,23 +1,12 @@
-use crate::models::{CommandAction, CommandCategory};
+use crate::{
+    app,
+    models::{
+        AppHealth, AppSettings, BootstrapPayload, CommandAction, CommandCategory, WorkspaceProfile,
+    },
+};
 
-pub struct CommandRegistry {
-    commands: Vec<CommandAction>,
-}
-
-impl CommandRegistry {
-    pub fn new() -> Self {
-        Self {
-            commands: seed_commands(),
-        }
-    }
-
-    pub fn commands(&self) -> &[CommandAction] {
-        &self.commands
-    }
-}
-
-fn seed_commands() -> Vec<CommandAction> {
-    vec![
+pub fn bootstrap_payload() -> BootstrapPayload {
+    let commands = vec![
         CommandAction {
             id: "core.open-command-palette".into(),
             title: "Open Command Palette".into(),
@@ -50,5 +39,33 @@ fn seed_commands() -> Vec<CommandAction> {
             tags: vec!["ports".into(), "process".into(), "network".into()],
             shortcut: None,
         },
-    ]
+    ];
+
+    BootstrapPayload {
+        health: AppHealth {
+            profile: WorkspaceProfile {
+                id: app::DEFAULT_PROFILE_ID.into(),
+                name: app::default_profile_name().into(),
+                enabled_categories: app::default_profile_categories(),
+                is_default: true,
+            },
+            command_count: commands.len(),
+            tray_ready: false,
+            storage_ready: false,
+        },
+        settings: AppSettings {
+            theme_mode: "system".into(),
+            launch_hotkey: "Alt+Space".into(),
+            close_to_tray: false,
+            history_limit: 50,
+        },
+        profiles: vec![WorkspaceProfile {
+            id: app::DEFAULT_PROFILE_ID.into(),
+            name: app::default_profile_name().into(),
+            enabled_categories: app::default_profile_categories(),
+            is_default: true,
+        }],
+        recent_history: vec![],
+        commands,
+    }
 }

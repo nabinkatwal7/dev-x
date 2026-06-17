@@ -29,8 +29,24 @@ const config: Config = {
         overlay: "0 18px 60px rgba(0, 0, 0, 0.45)"
       },
       fontFamily: {
-        sans: ["'IBM Plex Sans'", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["'IBM Plex Mono'", "ui-monospace", "monospace"]
+        sans: [
+          "'Fira Code'",
+          "'SF Mono'",
+          "'Cascadia Code'",
+          "'JetBrains Mono'",
+          "'Consolas'",
+          "ui-monospace",
+          "monospace"
+        ],
+        mono: [
+          "'Fira Code'",
+          "'SF Mono'",
+          "'Cascadia Code'",
+          "'JetBrains Mono'",
+          "'Consolas'",
+          "ui-monospace",
+          "monospace"
+        ]
       }
     }
   },
