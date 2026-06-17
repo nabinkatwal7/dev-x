@@ -13,14 +13,18 @@ pub fn run() {
             let handle = app.handle().clone();
             let state = state::AppState::new(handle)?;
             app.manage(state);
+            #[cfg(desktop)]
+            app::overlay::register_overlay_shortcut(app)?;
             Ok(())
         })
+        .on_window_event(app::overlay::handle_window_event)
         .invoke_handler(tauri::generate_handler![
             commands::bootstrap_app,
             commands::update_app_settings,
             commands::record_command_execution,
             commands::set_active_profile,
-            commands::execute_command
+            commands::execute_command,
+            commands::hide_overlay
         ])
         .run(tauri::generate_context!())
         .expect("error while running DevForge");

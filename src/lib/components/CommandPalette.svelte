@@ -28,6 +28,7 @@
       <span>{commandCount} indexed</span>
     </div>
     <input
+      id="command-search"
       class="w-full rounded-md border border-chrome-600 bg-chrome-950 px-3 py-2 text-sm text-chrome-100 outline-none transition focus:border-accent-400"
       bind:value={$query}
       placeholder="Search commands, tools, snippets, actions..."

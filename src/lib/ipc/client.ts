@@ -25,3 +25,7 @@ export async function executeCommand(commandId: string, input: string) {
     payload: { commandId, input }
   });
 }
+
+export async function hideOverlay() {
+  return invoke<void>("hide_overlay");
+}

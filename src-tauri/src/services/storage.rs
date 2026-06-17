@@ -180,7 +180,7 @@ impl StorageService {
             connection.execute(
                 "INSERT INTO app_settings (id, theme_mode, launch_hotkey, close_to_tray, history_limit)
                  VALUES (1, ?1, ?2, 0, 50)",
-                params!["system", "Alt+Space"],
+                params!["system", app::platform_default_hotkey()],
             )?;
         }
 

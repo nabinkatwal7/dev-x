@@ -60,3 +60,8 @@ pub fn execute_command(
         .execute(payload)
         .map_err(|error| error.to_string())
 }
+
+#[tauri::command]
+pub fn hide_overlay(app: tauri::AppHandle) -> Result<(), String> {
+    crate::app::overlay::hide_overlay_window(&app).map_err(|error| error.to_string())
+}

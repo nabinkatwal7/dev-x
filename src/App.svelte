@@ -2,17 +2,41 @@
   import { onMount } from "svelte";
   import CommandPalette from "./lib/components/CommandPalette.svelte";
   import PreviewPane from "./lib/components/PreviewPane.svelte";
-  import { bootstrapApp } from "./lib/ipc/client";
+  import { bootstrapApp, hideOverlay } from "./lib/ipc/client";
   import { appState, loadBootstrap, selectedCommand } from "./lib/stores/app-shell";
   let loadError: string | null = null;
 
-  onMount(async () => {
-    try {
-      const payload = await bootstrapApp();
-      loadBootstrap(payload);
-    } catch (error) {
-      loadError = error instanceof Error ? error.message : "Failed to load the application.";
-    }
+  onMount(() => {
+    const focusSearch = () => {
+      const search = document.getElementById("command-search") as HTMLInputElement | null;
+      search?.focus();
+      search?.select();
+    };
+
+    const handleKeydown = async (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        await hideOverlay();
+      }
+    };
+
+    window.addEventListener("focus", focusSearch);
+    window.addEventListener("keydown", handleKeydown);
+
+    void (async () => {
+      try {
+        const payload = await bootstrapApp();
+        loadBootstrap(payload);
+        focusSearch();
+      } catch (error) {
+        loadError = error instanceof Error ? error.message : "Failed to load the application.";
+      }
+    })();
+
+    return () => {
+      window.removeEventListener("focus", focusSearch);
+      window.removeEventListener("keydown", handleKeydown);
+    };
   });
 </script>
 

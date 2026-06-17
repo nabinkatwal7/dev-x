@@ -12,14 +12,18 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "DevForge",
         "theme": "Dark",
-        "width": 1440,
-        "height": 920,
-        "minWidth": 1180,
-        "minHeight": 720,
-        "resizable": true,
-        "decorations": true,
+        "width": 1120,
+        "height": 760,
+        "minWidth": 980,
+        "minHeight": 640,
+        "visible": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "decorations": false,
         "center": true,
         "hiddenTitle": true,
         "titleBarStyle": "Transparent"

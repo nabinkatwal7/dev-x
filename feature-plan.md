@@ -31,7 +31,7 @@ The following matrix maps out the 100 mandatory features across 10 functional pi
 
 ### 1. Unified Command Launcher & System Core
 
-- **001. Instant Overlay Engine:** Global hotkey toggle (`Alt+Space` or `Cmd+Space`) showing an un-focused, instantly reactive overlay mimicking Spotlight/Raycast.
+- **001. Instant Overlay Engine:** Global hotkey toggle (`Alt+Space` or `Cmd+Space`) showing an un-focused, instantly reactive overlay mimicking Spotlight/Raycast. [done]
 - **002. Fuzzy-Match Omnibar:** Custom fuzzy sorting algorithm prioritizing exact matches, historical execution frequencies, and structural tags.
 - **003. Dynamic Result Previews:** Split-pane interface showcasing immediate output layout transformations dynamically as the user types commands.
 - **004. Zero-Lag System Tray Agent:** Background daemon utilizing low-overhead Rust threads to monitor hotkeys while the primary window is unmapped.
