@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use tauri::State;
 
 use crate::{
@@ -7,6 +9,7 @@ use crate::{
         RecordCommandExecutionPayload, SaveWorkspaceProfilePayload, SearchHistoryPayload,
         UpdateSettingsPayload,
     },
+    services::command_executor::CommandExecutor,
     state::AppState,
 };
 
@@ -72,7 +75,7 @@ pub fn set_active_profile(
 }
 
 #[tauri::command]
-pub fn execute_command(
+pub async fn execute_command(
     state: State<'_, AppState>,
     payload: ExecuteCommandPayload,
 ) -> Result<CommandExecutionResult, String> {
@@ -83,12 +86,21 @@ pub fn execute_command(
             .map_err(|error| error.to_string());
     }
 
-    state.command_executor.execute(payload).map_err(|error| error.to_string())
+    let executor: Arc<CommandExecutor> = state.command_executor.clone();
+    tokio::task::spawn_blocking(move || executor.execute(payload))
+        .await
+        .map_err(|e| format!("execution panicked: {}", e))?
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn hide_overlay(app: tauri::AppHandle) -> Result<(), String> {
     crate::app::overlay::hide_overlay_window(&app).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn show_overlay(app: tauri::AppHandle) -> Result<(), String> {
+    crate::app::overlay::show_overlay_window(&app).map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -242,4 +254,9 @@ pub fn read_text_file(state: State<'_, AppState>, payload: FilePathPayload) -> R
         .storage
         .read_text_file(&payload.path)
         .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+pub fn get_system_metrics() -> Result<crate::models::SystemMetrics, String> {
+    crate::services::system_metrics::get_metrics().map_err(|e| e.to_string())
 }

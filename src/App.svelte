@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import CommandPalette from "./lib/components/CommandPalette.svelte";
   import PreviewPane from "./lib/components/PreviewPane.svelte";
+  import SettingsPanel from "./lib/components/SettingsPanel.svelte";
+  import StatusBar from "./lib/components/StatusBar.svelte";
   import { bootstrapApp, hideOverlay } from "./lib/ipc/client";
   import {
     appState,
@@ -11,14 +13,22 @@
     selectedCommand
   } from "./lib/stores/app-shell";
   let loadError: string | null = null;
+  let activeTab: "console" | "settings" = "console";
+
+  function capitalize(s: string): string {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
   declare global {
     interface Window {
       __DEVFORGE_PINNED_COMMAND__?: string;
+      __DEVFORGE_STATUSBAR__?: boolean;
     }
   }
 
   const pinnedCommandId =
     window.__DEVFORGE_PINNED_COMMAND__ ?? new URLSearchParams(window.location.search).get("pinned");
+  const isStatusBar = window.__DEVFORGE_STATUSBAR__ === true;
 
   onMount(() => {
     let bootstrapPoll: ReturnType<typeof setInterval> | null = null;
@@ -75,70 +85,76 @@
   <title>DevForge</title>
 </svelte:head>
 
-<main class={pinnedCommandId ? "h-screen text-chrome-100" : "min-h-screen px-3 py-3 text-chrome-100"}>
-  <section class={pinnedCommandId ? "flex h-full flex-col" : "flex min-h-[calc(100vh-1.5rem)] flex-col gap-3"}>
-    {#if !pinnedCommandId}
-      <header class="flex flex-col justify-between gap-3 rounded-lg border border-chrome-700/70 bg-chrome-900 px-4 py-3 lg:flex-row lg:items-center">
-      <div>
-        <div class="text-xs uppercase tracking-[0.24em] text-chrome-300">DevForge</div>
-        <h1 class="mt-1 text-2xl font-semibold text-chrome-100">Local desktop developer supertool</h1>
-        <p class="mt-2 max-w-3xl text-sm leading-5 text-chrome-300">
-          Phase 1 scaffold for a Tauri + Rust + Svelte application centered on the launcher,
-          typed IPC, and modular local services.
-        </p>
-      </div>
-
-      <div class="grid gap-1 rounded-md border border-chrome-700 bg-chrome-950 px-3 py-2 text-sm text-chrome-200">
-        <div class="flex items-center justify-between gap-8">
-          <span>Profile</span>
-          <strong>{$appState.health.profile.name}</strong>
+<main class="h-screen overflow-hidden text-chrome-100">
+  {#if isStatusBar}
+    <StatusBar />
+  {:else if pinnedCommandId}
+    <section class="flex h-full flex-col">
+      <PreviewPane
+        command={$selectedCommand}
+        pinnedModules={$appState.pinnedModules}
+      />
+    </section>
+  {:else}
+    <div class="flex h-full flex-col px-4 py-3">
+      <header class="flex shrink-0 items-center justify-between px-1 pb-3">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-semibold uppercase tracking-[0.24em] text-accent-400">DevForge</span>
+          <span class="text-xs text-chrome-600">|</span>
+          <span class="text-xs text-chrome-300">{capitalize($appState.health.profile.name)}</span>
         </div>
-        <div class="flex items-center justify-between gap-8">
-          <span>Commands</span>
-          <strong>{$appState.health.commandCount}</strong>
+        <div class="flex items-center gap-1">
+          <span class="mr-2 text-[11px] text-chrome-400">{activeTab === "console" ? $appState.health.commandCount + " commands" : ""}</span>
+          <button
+            class="rounded-full px-3 py-1.5 text-xs transition {activeTab === 'console' ? 'bg-chrome-700 text-chrome-100' : 'text-chrome-300 hover:bg-chrome-700 hover:text-chrome-100'}"
+            on:click={() => activeTab = "console"}
+          >
+            Console
+          </button>
+          <button
+            class="rounded-full px-3 py-1.5 text-xs transition {activeTab === 'settings' ? 'bg-chrome-700 text-chrome-100' : 'text-chrome-300 hover:bg-chrome-700 hover:text-chrome-100'}"
+            on:click={() => activeTab = "settings"}
+          >
+            Settings
+          </button>
         </div>
-      </div>
       </header>
-    {/if}
 
-    {#if loadError}
-      <section class="flex flex-1 items-center justify-center rounded-lg border border-signal-danger/40 bg-chrome-900 px-6 py-8">
-        <div class="max-w-2xl text-sm text-signal-danger">{loadError}</div>
-      </section>
-    {:else}
-      {#if pinnedCommandId}
-        <section class="min-h-0 flex-1">
-          <PreviewPane
-            command={$selectedCommand}
-            health={$appState.health}
-            settings={$appState.settings}
-            profiles={$appState.profiles}
-            commands={$appState.commands}
-            recentHistory={$appState.recentHistory}
-            pinnedModules={$appState.pinnedModules}
-            extensions={$appState.extensions}
-            standalone={true}
-          />
+      {#if loadError}
+        <section class="flex flex-1 items-center justify-center rounded-lg border border-signal-danger/40 bg-chrome-800 px-6 py-8">
+          <div class="max-w-2xl text-sm text-signal-danger">{loadError}</div>
         </section>
       {:else}
-        <section class="grid flex-1 gap-3 lg:grid-cols-[400px_minmax(0,1fr)]">
-          <div class="min-w-0">
-            <CommandPalette commandCount={$appState.health.commandCount} />
-          </div>
-          <div class="min-w-0">
-            <PreviewPane
-              command={$selectedCommand}
-              health={$appState.health}
-              settings={$appState.settings}
-              profiles={$appState.profiles}
-              commands={$appState.commands}
-              recentHistory={$appState.recentHistory}
-              pinnedModules={$appState.pinnedModules}
-              extensions={$appState.extensions}
-            />
-          </div>
-        </section>
+        {#if activeTab === "console"}
+          <section class="flex min-h-0 flex-1 gap-3">
+            <div class="flex w-[380px] shrink-0 flex-col">
+              <CommandPalette />
+            </div>
+            <div class="flex min-h-0 flex-1 flex-col">
+              <PreviewPane
+                command={$selectedCommand}
+                pinnedModules={$appState.pinnedModules}
+              />
+            </div>
+          </section>
+        {:else}
+          <section class="flex min-h-0 flex-1 gap-3">
+            <div class="flex w-[380px] shrink-0 flex-col">
+              <CommandPalette />
+            </div>
+            <div class="flex min-h-0 flex-1 flex-col">
+              <SettingsPanel
+                health={$appState.health}
+                settings={$appState.settings}
+                profiles={$appState.profiles}
+                commands={$appState.commands}
+                recentHistory={$appState.recentHistory}
+                extensions={$appState.extensions}
+              />
+            </div>
+          </section>
+        {/if}
       {/if}
-    {/if}
-  </section>
+    </div>
+  {/if}
 </main>

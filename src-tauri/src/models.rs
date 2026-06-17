@@ -191,3 +191,18 @@ pub struct FileTextPayload {
 pub struct FilePathPayload {
     pub path: String,
 }
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemMetrics {
+    pub memory_used_gb: f64,
+    pub memory_total_gb: f64,
+    pub memory_percent: f64,
+    pub network_rx_bytes: u64,
+    pub network_tx_bytes: u64,
+    pub cpu_percent: f64,
+    pub disk_used_gb: f64,
+    pub disk_total_gb: f64,
+    pub uptime_secs: u64,
+    pub process_count: usize,
+}

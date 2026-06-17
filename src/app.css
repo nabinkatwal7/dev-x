@@ -13,20 +13,20 @@
     ui-monospace,
     monospace;
   font-variant-ligatures: contextual;
-  --chrome-950: 13 17 23;
-  --chrome-900: 19 26 34;
-  --chrome-800: 26 35 48;
-  --chrome-700: 35 48 68;
-  --chrome-600: 49 65 92;
-  --chrome-300: 149 167 191;
-  --chrome-200: 196 209 227;
-  --chrome-100: 229 237 249;
-  --accent-500: 88 196 220;
-  --accent-400: 124 216 235;
+  --chrome-950: 5 7 10;
+  --chrome-900: 8 11 16;
+  --chrome-800: 15 19 26;
+  --chrome-700: 30 41 59;
+  --chrome-600: 51 65 85;
+  --chrome-300: 148 163 184;
+  --chrome-200: 203 213 225;
+  --chrome-100: 241 245 249;
+  --accent-500: 56 189 248;
+  --accent-400: 125 211 252;
   --signal-success: 74 222 128;
   --signal-warning: 251 191 36;
   --signal-danger: 251 113 133;
-  background: rgb(var(--chrome-950));
+  background: rgb(var(--chrome-900));
   color: rgb(var(--chrome-100));
 }
 

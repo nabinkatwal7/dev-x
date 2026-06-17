@@ -42,7 +42,7 @@ The following matrix maps out the 100 mandatory features across 10 functional pi
 - **009. Layout/Theme Engine Matrix:** Full Tailwind-driven theme selector with native support for matching system light/dark/contrast modes instantly.
 - **010. Advanced Export/Import Configurations:** Single-file encrypted JSON synchronization mechanism for migrating custom aliases, settings, and snippets between systems.
 
-### 2. Network, Port & Process Wrangling
+### 2. Network, Port & Process Wrangling [done]
 
 - **011. Zero-Latency Process Port Mapper:** Real-time visual list displaying all active local TCP/UDP listeners paired with process IDs (PID) and binary names.
 - **012. Atomic Process Termination (Force Kill):** Integrated administrative mechanism to trigger instant graceful (`SIGTERM`) or immediate hard (`SIGKILL`) process terminations.
@@ -55,7 +55,7 @@ The following matrix maps out the 100 mandatory features across 10 functional pi
 - **019. Domain Name & SSL Expiry Validator:** Quick checker analyzing target domain certificates, showing trust chains, encryption standards, and days-remaining counters.
 - **020. Local Subnet Sweep Engine:** Fast asynchronous IP scanning utility locating network devices, internal developer sandboxes, and active headless servers.
 
-### 3. Structural Data Transpilation & Formatting
+### 3. Structural Data Transpilation & Formatting [done]
 
 - **021. Streaming JSON Formatter & Minifier:** Ultra-high-speed parser capable of structural layout formatting and flattening of multiline JSON blocks.
 - **022. Schema Inter-Converter Engine:** Bi-directional real-time schema converter translating between JSON, YAML, XML, TOML, and CSV structures instantly.
@@ -68,7 +68,7 @@ The following matrix maps out the 100 mandatory features across 10 functional pi
 - **029. URL Query Parameter Deconstructor:** Analyzer breaking complex URLs with multi-layered tracking parameters into editable, structured query keys.
 - **030. XML Path (XPath) & JSONPath Evaluator:** Live query evaluator extracting nodes or properties from massive document structures via custom path expressions.
 
-### 4. Advanced Cryptography & Key Management
+### 4. Advanced Cryptography & Key Management [done]
 
 - **031. Native Multi-Hash Compute Sandbox:** Parallel calculator computing MD5, SHA-1, SHA-256, SHA-512, and CRC32 signatures over text strings or system binaries.
 - **032. Comprehensive JWT Inspection Deck:** Cryptographic decoder parsing JSON Web Tokens to expose payloads, header algos, issuance times, and signature states.
@@ -81,7 +81,7 @@ The following matrix maps out the 100 mandatory features across 10 functional pi
 - **039. HMAC Signature Computational Matrix:** Validation tool checking webhook signatures across various provider payloads using manual tracking keys.
 - **040. Local Cryptographic Vault Sandbox:** Secure, memory-encrypted notepad designed for staging transient production API keys during intensive debug sessions.
 
-### 5. Developer-Centric Clipboard & History Engine
+### 5. Developer-Centric Clipboard & History Engine [done]
 
 - **041. Multi-Format Structural Clipboard Stack:** Continuous internal clipboard tracker capturing text, images, files, and rich structures into a history pane.
 - **042. Semantic Contextual Data Classifier:** Background scanner categorizing copied content automatically (e.g., IP addresses, Colors, SQL queries, Dates).
