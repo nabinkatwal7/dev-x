@@ -12,9 +12,56 @@
     "Consolas",
     ui-monospace,
     monospace;
-  background: #0d1117;
-  color: #e5edf9;
   font-variant-ligatures: contextual;
+  --chrome-950: 13 17 23;
+  --chrome-900: 19 26 34;
+  --chrome-800: 26 35 48;
+  --chrome-700: 35 48 68;
+  --chrome-600: 49 65 92;
+  --chrome-300: 149 167 191;
+  --chrome-200: 196 209 227;
+  --chrome-100: 229 237 249;
+  --accent-500: 88 196 220;
+  --accent-400: 124 216 235;
+  --signal-success: 74 222 128;
+  --signal-warning: 251 191 36;
+  --signal-danger: 251 113 133;
+  background: rgb(var(--chrome-950));
+  color: rgb(var(--chrome-100));
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --chrome-950: 245 247 250;
+  --chrome-900: 255 255 255;
+  --chrome-800: 232 237 243;
+  --chrome-700: 210 220 232;
+  --chrome-600: 129 148 172;
+  --chrome-300: 86 100 120;
+  --chrome-200: 53 65 81;
+  --chrome-100: 15 23 42;
+  --accent-500: 14 116 144;
+  --accent-400: 6 182 212;
+  --signal-success: 22 163 74;
+  --signal-warning: 202 138 4;
+  --signal-danger: 225 29 72;
+}
+
+:root[data-theme="contrast"] {
+  color-scheme: dark;
+  --chrome-950: 0 0 0;
+  --chrome-900: 8 8 8;
+  --chrome-800: 18 18 18;
+  --chrome-700: 64 64 64;
+  --chrome-600: 120 120 120;
+  --chrome-300: 214 214 214;
+  --chrome-200: 235 235 235;
+  --chrome-100: 255 255 255;
+  --accent-500: 255 214 10;
+  --accent-400: 255 234 128;
+  --signal-success: 0 255 127;
+  --signal-warning: 255 214 10;
+  --signal-danger: 255 99 132;
 }
 
 html,
@@ -27,17 +74,19 @@ body,
 
 body {
   min-height: 100vh;
-  background: #0d1117;
+  background: rgb(var(--chrome-950));
 }
 
 button,
-input {
+input,
+textarea,
+select {
   font: inherit;
 }
 
 input,
 textarea {
-  caret-color: #58c4dc;
+  caret-color: rgb(var(--accent-500));
 }
 
 * {

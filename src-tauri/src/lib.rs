@@ -24,7 +24,15 @@ pub fn run() {
             commands::record_command_execution,
             commands::set_active_profile,
             commands::execute_command,
-            commands::hide_overlay
+            commands::hide_overlay,
+            commands::save_workspace_profile,
+            commands::search_command_history,
+            commands::toggle_pinned_module,
+            commands::reload_extensions,
+            commands::export_configuration_snapshot,
+            commands::import_configuration,
+            commands::write_text_file,
+            commands::read_text_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running DevForge");

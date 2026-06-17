@@ -12,12 +12,16 @@ pub struct CommandAction {
     pub accepts_input: bool,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceProfile {
     pub id: String,
     pub name: String,
+    pub environment_tags: Vec<String>,
     pub enabled_categories: Vec<CommandCategory>,
+    pub enabled_command_ids: Vec<String>,
+    pub default_command_id: String,
+    pub launch_hotkey: String,
     pub is_default: bool,
 }
 
@@ -28,6 +32,7 @@ pub struct AppHealth {
     pub command_count: usize,
     pub tray_ready: bool,
     pub storage_ready: bool,
+    pub extension_directory: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -38,6 +43,8 @@ pub struct BootstrapPayload {
     pub profiles: Vec<WorkspaceProfile>,
     pub recent_history: Vec<CommandHistoryEntry>,
     pub command_usage: Vec<CommandUsageEntry>,
+    pub pinned_modules: Vec<PinnedModule>,
+    pub extensions: Vec<ScriptExtensionSummary>,
     pub commands: Vec<CommandAction>,
 }
 
@@ -69,6 +76,7 @@ pub struct CommandHistoryEntry {
     pub id: i64,
     pub command_id: String,
     pub query_text: String,
+    pub input_text: String,
     pub executed_at: String,
 }
 
@@ -77,6 +85,7 @@ pub struct CommandHistoryEntry {
 pub struct RecordCommandExecutionPayload {
     pub command_id: String,
     pub query_text: String,
+    pub input_text: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -118,4 +127,67 @@ pub enum CommandExecutionStatus {
 pub struct CommandUsageEntry {
     pub command_id: String,
     pub execution_count: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveWorkspaceProfilePayload {
+    pub id: Option<String>,
+    pub name: String,
+    pub environment_tags: Vec<String>,
+    pub enabled_command_ids: Vec<String>,
+    pub default_command_id: String,
+    pub launch_hotkey: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SearchHistoryPayload {
+    pub query_text: String,
+    pub limit: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PinnedModule {
+    pub command_id: String,
+    pub window_label: String,
+    pub title: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ScriptExtensionSummary {
+    pub id: String,
+    pub title: String,
+    pub subtitle: String,
+    pub source_path: String,
+    pub command_path: String,
+    pub accepts_input: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConfigurationSnapshot {
+    pub settings: AppSettings,
+    pub profiles: Vec<WorkspaceProfile>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImportConfigurationPayload {
+    pub snapshot: ConfigurationSnapshot,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileTextPayload {
+    pub path: String,
+    pub contents: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FilePathPayload {
+    pub path: String,
 }

@@ -6,23 +6,23 @@ const config: Config = {
     extend: {
       colors: {
         chrome: {
-          950: "#0d1117",
-          900: "#131a22",
-          800: "#1a2330",
-          700: "#233044",
-          600: "#31415c",
-          300: "#95a7bf",
-          200: "#c4d1e3",
-          100: "#e5edf9"
+          950: "rgb(var(--chrome-950) / <alpha-value>)",
+          900: "rgb(var(--chrome-900) / <alpha-value>)",
+          800: "rgb(var(--chrome-800) / <alpha-value>)",
+          700: "rgb(var(--chrome-700) / <alpha-value>)",
+          600: "rgb(var(--chrome-600) / <alpha-value>)",
+          300: "rgb(var(--chrome-300) / <alpha-value>)",
+          200: "rgb(var(--chrome-200) / <alpha-value>)",
+          100: "rgb(var(--chrome-100) / <alpha-value>)"
         },
         accent: {
-          500: "#58c4dc",
-          400: "#7cd8eb"
+          500: "rgb(var(--accent-500) / <alpha-value>)",
+          400: "rgb(var(--accent-400) / <alpha-value>)"
         },
         signal: {
-          success: "#4ade80",
-          warning: "#fbbf24",
-          danger: "#fb7185"
+          success: "rgb(var(--signal-success) / <alpha-value>)",
+          warning: "rgb(var(--signal-warning) / <alpha-value>)",
+          danger: "rgb(var(--signal-danger) / <alpha-value>)"
         }
       },
       boxShadow: {
