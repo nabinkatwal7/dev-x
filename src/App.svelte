@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import AppRail from "./lib/components/AppRail.svelte";
   import CommandPalette from "./lib/components/CommandPalette.svelte";
+  import HistoryPanel from "./lib/components/HistoryPanel.svelte";
   import PreviewPane from "./lib/components/PreviewPane.svelte";
   import SettingsPanel from "./lib/components/SettingsPanel.svelte";
   import StatusBar from "./lib/components/StatusBar.svelte";
@@ -13,10 +15,10 @@
     selectedCommand
   } from "./lib/stores/app-shell";
   let loadError: string | null = null;
-  let activeTab: "console" | "settings" = "console";
+  let activeView: "workbench" | "history" | "settings" = "workbench";
 
-  function capitalize(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
+  function navigate(view: "workbench" | "history" | "settings") {
+    activeView = view;
   }
 
   declare global {
@@ -96,38 +98,17 @@
       />
     </section>
   {:else}
-    <div class="flex h-full flex-col px-4 py-3">
-      <header class="flex shrink-0 items-center justify-between px-1 pb-3">
-        <div class="flex items-center gap-3">
-          <span class="text-xs font-semibold uppercase tracking-[0.24em] text-accent-400">DevForge</span>
-          <span class="text-xs text-chrome-600">|</span>
-          <span class="text-xs text-chrome-300">{capitalize($appState.health.profile.name)}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <span class="mr-2 text-[11px] text-chrome-400">{activeTab === "console" ? $appState.health.commandCount + " commands" : ""}</span>
-          <button
-            class="rounded-full px-3 py-1.5 text-xs transition {activeTab === 'console' ? 'bg-chrome-700 text-chrome-100' : 'text-chrome-300 hover:bg-chrome-700 hover:text-chrome-100'}"
-            on:click={() => activeTab = "console"}
-          >
-            Console
-          </button>
-          <button
-            class="rounded-full px-3 py-1.5 text-xs transition {activeTab === 'settings' ? 'bg-chrome-700 text-chrome-100' : 'text-chrome-300 hover:bg-chrome-700 hover:text-chrome-100'}"
-            on:click={() => activeTab = "settings"}
-          >
-            Settings
-          </button>
-        </div>
-      </header>
+    <div class="h-full overflow-hidden bg-chrome-950 p-2">
+      <div class="flex h-full min-h-0 gap-2">
+        <AppRail activeView={activeView} onNavigate={navigate} />
 
-      {#if loadError}
-        <section class="flex flex-1 items-center justify-center rounded-lg border border-signal-danger/40 bg-chrome-800 px-6 py-8">
-          <div class="max-w-2xl text-sm text-signal-danger">{loadError}</div>
-        </section>
-      {:else}
-        {#if activeTab === "console"}
-          <section class="flex min-h-0 flex-1 gap-3">
-            <div class="flex w-[380px] shrink-0 flex-col">
+        {#if loadError}
+          <section class="flex flex-1 items-center justify-center rounded-2xl border border-signal-danger/40 bg-chrome-900 px-6 py-8">
+            <div class="max-w-2xl text-sm text-signal-danger">{loadError}</div>
+          </section>
+        {:else if activeView === "workbench"}
+          <section class="flex min-h-0 flex-1 gap-2">
+            <div class="flex w-[300px] shrink-0 flex-col">
               <CommandPalette />
             </div>
             <div class="flex min-h-0 flex-1 flex-col">
@@ -137,24 +118,21 @@
               />
             </div>
           </section>
+        {:else if activeView === "history"}
+          <HistoryPanel />
         {:else}
-          <section class="flex min-h-0 flex-1 gap-3">
-            <div class="flex w-[380px] shrink-0 flex-col">
-              <CommandPalette />
-            </div>
-            <div class="flex min-h-0 flex-1 flex-col">
-              <SettingsPanel
-                health={$appState.health}
-                settings={$appState.settings}
-                profiles={$appState.profiles}
-                commands={$appState.commands}
-                recentHistory={$appState.recentHistory}
-                extensions={$appState.extensions}
-              />
-            </div>
+          <section class="flex min-h-0 flex-1 flex-col">
+            <SettingsPanel
+              health={$appState.health}
+              settings={$appState.settings}
+              profiles={$appState.profiles}
+              commands={$appState.commands}
+              recentHistory={$appState.recentHistory}
+              extensions={$appState.extensions}
+            />
           </section>
         {/if}
-      {/if}
+      </div>
     </div>
   {/if}
 </main>

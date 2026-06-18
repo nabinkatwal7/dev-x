@@ -10,3 +10,25 @@ export const categoryLabels: Record<CommandCategory, string> = {
   network: "Network",
   system: "System"
 };
+
+export const categoryIcons: Record<CommandCategory, string> = {
+  ai: "AI",
+  clipboard: "CL",
+  core: "HM",
+  crypto: "CR",
+  data: "DT",
+  filesystem: "FS",
+  network: "NW",
+  system: "SY"
+};
+
+export const orderedCategories: CommandCategory[] = [
+  "data",
+  "clipboard",
+  "crypto",
+  "system",
+  "filesystem",
+  "network",
+  "ai",
+  "core"
+];

@@ -308,7 +308,7 @@ pub fn json_unflatten(input: &str) -> Result<CommandExecutionResult, AppError> {
         });
     }
 
-    let mut root = serde_json::Map::new();
+    let mut root = serde_json::Value::Object(serde_json::Map::new());
 
     for line in trimmed.lines() {
         let line = line.trim();
@@ -336,10 +336,10 @@ pub fn json_unflatten(input: &str) -> Result<CommandExecutionResult, AppError> {
             serde_json::Value::String(raw_val.to_string())
         };
 
-        set_nested(&mut root, path, value);
+        set_nested_value(&mut root, &parse_path_segments(path), value);
     }
 
-    let output = serde_json::to_string_pretty(&serde_json::Value::Object(root))
+    let output = serde_json::to_string_pretty(&root)
         .map_err(|e| AppError::Internal(format!("JSON serialization failed: {}", e)))?;
 
     Ok(CommandExecutionResult {
@@ -351,48 +351,49 @@ pub fn json_unflatten(input: &str) -> Result<CommandExecutionResult, AppError> {
     })
 }
 
-fn set_nested(obj: &mut serde_json::Map<String, serde_json::Value>, path: &str, value: serde_json::Value) {
-    let segments = parse_path_segments(path);
-    let mut current: &mut serde_json::Value = &mut serde_json::Value::Object(std::mem::take(obj));
-
-    for (i, seg) in segments.iter().enumerate() {
-        let is_last = i == segments.len() - 1;
-        let next = match current {
-            serde_json::Value::Object(ref mut m) => {
-                if is_last {
-                    m.insert(seg.clone(), value.clone());
-                    return;
-                }
-                m.entry(seg.clone()).or_insert_with(|| serde_json::Value::Object(serde_json::Map::new()))
-            }
-            serde_json::Value::Array(ref mut a) => {
-                let idx: usize = seg.parse().unwrap_or(0);
-                if idx >= a.len() {
-                    a.resize_with(idx + 1, || serde_json::Value::Null);
-                }
-                if is_last {
-                    a[idx] = value.clone();
-                    return;
-                }
-                &mut a[idx]
-            }
-            _ => return,
-        };
-        current = next;
+fn set_nested_value(target: &mut serde_json::Value, segments: &[PathSegment], value: serde_json::Value) {
+    if segments.is_empty() {
+        *target = value;
+        return;
     }
 
-    *obj = match std::mem::take(current) {
-        serde_json::Value::Object(m) => m,
-        other => {
-            // Merge failed, set as-is
-            let mut map = serde_json::Map::new();
-            map.insert("_value".into(), other);
-            map
+    match &segments[0] {
+        PathSegment::Key(key) => {
+            if !target.is_object() {
+                *target = serde_json::Value::Object(serde_json::Map::new());
+            }
+            let object = target.as_object_mut().unwrap();
+            if segments.len() == 1 {
+                object.insert(key.clone(), value);
+                return;
+            }
+            let next = object.entry(key.clone()).or_insert(serde_json::Value::Null);
+            set_nested_value(next, &segments[1..], value);
         }
-    };
+        PathSegment::Index(index) => {
+            if !target.is_array() {
+                *target = serde_json::Value::Array(Vec::new());
+            }
+            let array = target.as_array_mut().unwrap();
+            while array.len() <= *index {
+                array.push(serde_json::Value::Null);
+            }
+            if segments.len() == 1 {
+                array[*index] = value;
+                return;
+            }
+            set_nested_value(&mut array[*index], &segments[1..], value);
+        }
+    }
 }
 
-fn parse_path_segments(path: &str) -> Vec<String> {
+#[derive(Clone, Debug)]
+enum PathSegment {
+    Key(String),
+    Index(usize),
+}
+
+fn parse_path_segments(path: &str) -> Vec<PathSegment> {
     let mut segs = Vec::new();
     let mut current = String::new();
     let mut chars = path.chars().peekable();
@@ -400,21 +401,31 @@ fn parse_path_segments(path: &str) -> Vec<String> {
     while let Some(ch) = chars.next() {
         match ch {
             '.' => {
-                if !current.is_empty() { segs.push(std::mem::take(&mut current)); }
+                if !current.is_empty() {
+                    segs.push(PathSegment::Key(std::mem::take(&mut current)));
+                }
             }
             '[' => {
-                if !current.is_empty() { segs.push(std::mem::take(&mut current)); }
+                if !current.is_empty() {
+                    segs.push(PathSegment::Key(std::mem::take(&mut current)));
+                }
                 let mut idx = String::new();
                 for c in chars.by_ref() {
                     if c == ']' { break; }
                     idx.push(c);
                 }
-                if !idx.is_empty() { segs.push(idx); }
+                if let Ok(parsed) = idx.parse::<usize>() {
+                    segs.push(PathSegment::Index(parsed));
+                } else if !idx.is_empty() {
+                    segs.push(PathSegment::Key(idx.trim_matches('\'').trim_matches('"').to_string()));
+                }
             }
             _ => current.push(ch),
         }
     }
-    if !current.is_empty() { segs.push(current); }
+    if !current.is_empty() {
+        segs.push(PathSegment::Key(current));
+    }
     segs
 }
 

@@ -5,6 +5,7 @@
 use crate::error::AppError;
 use crate::models::{CommandExecutionResult, CommandExecutionStatus};
 use std::collections::VecDeque;
+use std::process::Command;
 use std::sync::Mutex;
 use regex::Regex;
 
@@ -28,13 +29,58 @@ lazy_static::lazy_static! {
 pub fn clipboard_stack(input: &str) -> Result<CommandExecutionResult, AppError> {
     let trimmed = input.trim();
 
+    if trimmed.eq_ignore_ascii_case("capture") || trimmed.eq_ignore_ascii_case("sync") {
+        let value = get_system_clipboard()?;
+        if value.trim().is_empty() {
+            return Ok(CommandExecutionResult {
+                command_id: "clip.stack".into(),
+                title: "Clipboard Empty".into(),
+                output: "System clipboard is empty.".into(),
+                status: CommandExecutionStatus::Info,
+                summary: "Nothing captured from the system clipboard".into(),
+            });
+        }
+        push_clipboard_history(&value);
+        return Ok(CommandExecutionResult {
+            command_id: "clip.stack".into(),
+            title: "Clipboard Captured".into(),
+            output: value,
+            status: CommandExecutionStatus::Success,
+            summary: "Captured the current system clipboard into history".into(),
+        });
+    }
+
+    if trimmed.eq_ignore_ascii_case("peek") {
+        let value = get_system_clipboard()?;
+        return Ok(CommandExecutionResult {
+            command_id: "clip.stack".into(),
+            title: "System Clipboard".into(),
+            output: value,
+            status: CommandExecutionStatus::Success,
+            summary: "Read the current system clipboard".into(),
+        });
+    }
+
+    if let Some(value) = trimmed.strip_prefix("copy:") {
+        let value = value.trim();
+        set_system_clipboard(value)?;
+        push_clipboard_history(value);
+        return Ok(CommandExecutionResult {
+            command_id: "clip.stack".into(),
+            title: "Clipboard Updated".into(),
+            output: format!("Copied {} chars to the system clipboard.", value.len()),
+            status: CommandExecutionStatus::Success,
+            summary: "System clipboard updated".into(),
+        });
+    }
+
     if trimmed.is_empty() || trimmed == "list" || trimmed == "ls" {
         let clip = CLIPBOARD.lock().unwrap();
         if clip.items.is_empty() {
             return Ok(CommandExecutionResult {
                 command_id: "clip.stack".into(),
                 title: "Clipboard History".into(),
-                output: "No items in clipboard history.".into(),
+                output: "No items in clipboard history.\n\nCommands:\n  capture       - read the current system clipboard into history\n  peek          - show the current system clipboard\n  copy:<text>   - write text to the system clipboard and history\n  get <index>   - restore a history item back to the system clipboard\n  clear         - empty local history".into(),
                 status: CommandExecutionStatus::Info,
                 summary: "History is empty".into(),
             });
@@ -72,12 +118,14 @@ pub fn clipboard_stack(input: &str) -> Result<CommandExecutionResult, AppError> 
             let clip = CLIPBOARD.lock().unwrap();
             let items: Vec<&String> = clip.items.iter().rev().collect();
             if idx > 0 && idx <= items.len() {
+                let value = items[idx - 1].clone();
+                let _ = set_system_clipboard(&value);
                 return Ok(CommandExecutionResult {
                     command_id: "clip.stack".into(),
                     title: format!("Clipboard #{}", idx),
-                    output: items[idx - 1].clone(),
+                    output: value.clone(),
                     status: CommandExecutionStatus::Success,
-                    summary: "Retrieved from history".into(),
+                    summary: "Retrieved from history and copied to the system clipboard".into(),
                 });
             }
         }
@@ -91,19 +139,52 @@ pub fn clipboard_stack(input: &str) -> Result<CommandExecutionResult, AppError> 
     }
 
     // Push new item to clipboard stack
-    let mut clip = CLIPBOARD.lock().unwrap();
-    if clip.items.len() >= MAX_CLIP_HISTORY {
-        clip.items.pop_front();
-    }
-    clip.items.push_back(trimmed.to_string());
+    push_clipboard_history(trimmed);
 
     Ok(CommandExecutionResult {
         command_id: "clip.stack".into(),
         title: "Clipboard Push".into(),
-        output: format!("Pushed ({} chars). Use 'list' to view or 'get N' to retrieve.", trimmed.len()),
+        output: format!("Stored {} chars in clipboard history. Use 'copy:<text>' to also push it to the system clipboard.", trimmed.len()),
         status: CommandExecutionStatus::Success,
         summary: "Item added to clipboard history".into(),
     })
+}
+
+fn push_clipboard_history(value: &str) {
+    let mut clip = CLIPBOARD.lock().unwrap();
+    if clip.items.back().map(|last| last == value).unwrap_or(false) {
+        return;
+    }
+    if clip.items.len() >= MAX_CLIP_HISTORY {
+        clip.items.pop_front();
+    }
+    clip.items.push_back(value.to_string());
+}
+
+fn get_system_clipboard() -> Result<String, AppError> {
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", "Get-Clipboard -Raw"])
+        .output()
+        .map_err(|error| AppError::Internal(format!("failed to read the system clipboard: {}", error)))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Internal(format!("Get-Clipboard failed: {}", stderr.trim())));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn set_system_clipboard(value: &str) -> Result<(), AppError> {
+    let escaped = value.replace('\'', "''");
+    let script = format!("Set-Clipboard -Value @'\n{}\n'@", escaped);
+    let output = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-Command", &script])
+        .output()
+        .map_err(|error| AppError::Internal(format!("failed to write the system clipboard: {}", error)))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Internal(format!("Set-Clipboard failed: {}", stderr.trim())));
+    }
+    Ok(())
 }
 
 // ============================================================

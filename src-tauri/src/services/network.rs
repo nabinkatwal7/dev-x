@@ -938,7 +938,6 @@ pub fn run_ping(input: &str) -> Result<CommandExecutionResult, AppError> {
         output.push('\n');
 
         if trimmed.contains("time=") || trimmed.contains("time<") {
-            received += 1;
             if let Some(ms_str) = trimmed.split("time=").nth(1).or_else(|| trimmed.split("time<").nth(1)) {
                 let ms_str = ms_str.trim_matches(|c: char| c.is_whitespace() || c == 'm' || c == 's');
                 if let Ok(ms) = ms_str.parse::<f64>() {

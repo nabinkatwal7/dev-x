@@ -1,4 +1,5 @@
 import { derived, get, writable } from "svelte/store";
+import { getToolSpec } from "../core/tool-meta";
 import {
   executeCommand,
   exportConfigurationSnapshot,
@@ -15,6 +16,7 @@ import {
 import type {
   AppSettings,
   BootstrapPayload,
+  CommandCategory,
   CommandAction,
   CommandExecutionResult,
   CommandHistoryEntry,
@@ -56,6 +58,7 @@ const initialState: BootstrapPayload = {
 
 export const appState = writable(initialState);
 export const query = writable("");
+export const activeCategoryFilter = writable<CommandCategory | "all">("all");
 export const selectedCommandId = writable<string | null>(null);
 export const commandInput = writable(defaultCommandInput("data.format-json"));
 export const commandResult = writable<CommandExecutionResult | null>(null);
@@ -67,10 +70,30 @@ export const historyResults = writable<CommandHistoryEntry[]>([]);
 export const historyLoading = writable(false);
 
 export const filteredCommands = derived(
-  [appState, query],
-  ([$appState, $query]) =>
-    rankCommands(visibleCommands($appState), $appState.commandUsage, $query)
+  [appState, query, activeCategoryFilter],
+  ([$appState, $query, $activeCategoryFilter]) =>
+    rankCommands(
+      visibleCommands($appState).filter((command) =>
+        $activeCategoryFilter === "all" ? true : command.category === $activeCategoryFilter
+      ),
+      $appState.commandUsage,
+      $query
+    )
 );
+
+export const recentCommands = derived(appState, ($appState) => {
+  const unique = new Set<string>();
+  const recent = [];
+  for (const item of $appState.recentHistory) {
+    if (unique.has(item.commandId)) continue;
+    const command = $appState.commands.find((entry) => entry.id === item.commandId);
+    if (!command) continue;
+    unique.add(item.commandId);
+    recent.push(command);
+    if (recent.length >= 8) break;
+  }
+  return recent;
+});
 
 export const selectedCommand = derived(
   [filteredCommands, selectedCommandId],
@@ -180,6 +203,10 @@ export async function persistWorkspaceProfile(payload: SaveWorkspaceProfilePaylo
 
 export function selectCommand(command: CommandAction) {
   selectCommandById(command.id);
+}
+
+export function setCategoryFilter(category: CommandCategory | "all") {
+  activeCategoryFilter.set(category);
 }
 
 export function selectCommandById(commandId: string, nextInput?: string) {
@@ -338,7 +365,7 @@ function scheduleLivePreview(command: CommandAction | null, input: string) {
     clearTimeout(previewTimeout);
   }
 
-  if (!command?.acceptsInput || get(commandRunning)) {
+  if (!command?.acceptsInput || get(commandRunning) || !getToolSpec(command).livePreview) {
     previewRunning.set(false);
     return;
   }
@@ -374,6 +401,11 @@ async function runLivePreview(command: CommandAction, input: string, requestId: 
   }
 }
 export function updateCommandInput(value: string) {
+  commandInput.set(value);
+  scheduleLivePreview(get(selectedCommand), value);
+}
+
+export function applyCommandTemplate(value: string) {
   commandInput.set(value);
   scheduleLivePreview(get(selectedCommand), value);
 }

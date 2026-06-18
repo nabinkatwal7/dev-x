@@ -71,7 +71,7 @@ pub fn show_overlay_window(app: &AppHandle) -> tauri::Result<()> {
     if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
         window.show()?;
         let _ = window.unminimize();
-        let _ = window.center();
+        let _ = window.maximize();
         window.set_focus()?;
     }
     Ok(())
@@ -84,7 +84,7 @@ pub fn toggle_overlay_window(app: &AppHandle) -> tauri::Result<()> {
         } else {
             window.show()?;
             let _ = window.unminimize();
-            let _ = window.center();
+            let _ = window.maximize();
             window.set_focus()?;
         }
     }

@@ -1,7 +1,10 @@
 use crate::error::AppError;
 use crate::models::{CommandExecutionResult, CommandExecutionStatus};
 use std::collections::HashMap;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
+use std::time::Instant;
 
 // ============================================================
 // 031 - Native Multi-Hash Compute Sandbox
@@ -291,46 +294,78 @@ pub fn hash_benchmark(input: &str) -> Result<CommandExecutionResult, AppError> {
             title: "Hash Benchmark".into(),
             output: String::new(),
             status: CommandExecutionStatus::Info,
-            summary: "Paste text to hash with bcrypt (cost 10), argon2, or scrypt.\nPrefix: bcrypt:<text>, argon2:<text>, scrypt:<text>".into(),
+            summary: "Format:\nalgo:bcrypt|argon2|sha256\niterations:5\ncost:10\ntext:benchmark me".into(),
         });
     }
 
-    let (algo, body) = if let Some(pos) = trimmed.find(':') {
-        (trimmed[..pos].trim().to_lowercase(), trimmed[pos + 1..].trim())
+    let mut algo = String::from("bcrypt");
+    let mut iterations = 3usize;
+    let mut cost = 10u32;
+    let mut text = String::new();
+
+    if trimmed.contains('\n') {
+        for line in trimmed.lines() {
+            if let Some(value) = line.strip_prefix("algo:") {
+                algo = value.trim().to_lowercase();
+            } else if let Some(value) = line.strip_prefix("iterations:") {
+                iterations = value.trim().parse::<usize>().unwrap_or(3).clamp(1, 50);
+            } else if let Some(value) = line.strip_prefix("cost:") {
+                cost = value.trim().parse::<u32>().unwrap_or(10).clamp(4, 15);
+            } else if let Some(value) = line.strip_prefix("text:") {
+                text = value.to_string();
+            }
+        }
+    } else if let Some(pos) = trimmed.find(':') {
+        algo = trimmed[..pos].trim().to_lowercase();
+        text = trimmed[pos + 1..].trim().to_string();
     } else {
-        ("bcrypt".into(), trimmed)
-    };
+        text = trimmed.to_string();
+    }
+
+    if text.is_empty() {
+        return Err(AppError::Internal("benchmark text cannot be empty".into()));
+    }
 
     let output = match algo.as_str() {
         "bcrypt" => {
-            let cost = 10;
-            let hash = bcrypt::hash(body, cost)
-                .map_err(|e| AppError::Internal(format!("bcrypt failed: {}", e)))?;
-            let valid = bcrypt::verify(body, &hash).unwrap_or(false);
-            format!("Hash (cost={}): {}\nVerified: {}", cost, hash, valid)
+            let mut timings = Vec::new();
+            let mut hash = String::new();
+            for _ in 0..iterations {
+                let start = Instant::now();
+                hash = bcrypt::hash(&text, cost)
+                    .map_err(|e| AppError::Internal(format!("bcrypt failed: {}", e)))?;
+                timings.push(start.elapsed().as_millis() as u128);
+            }
+            let valid = bcrypt::verify(&text, &hash).unwrap_or(false);
+            format_benchmark_output("bcrypt", iterations, &timings, &hash, Some(format!("verify={}", valid)))
         }
         "argon2" | "argon2id" => {
             use argon2::Argon2;
             use argon2::password_hash::{SaltString, PasswordHasher};
-            let salt = SaltString::generate(&mut rand::thread_rng());
-            let hash = Argon2::default().hash_password(body.as_bytes(), &salt)
-                .map_err(|e| AppError::Internal(format!("Argon2 failed: {}", e)))?;
-            let hash_str = hash.to_string();
-            format!("Hash: {}\n(Verification available via compare mode)", hash_str)
+            let mut timings = Vec::new();
+            let mut hash = String::new();
+            for _ in 0..iterations {
+                let salt = SaltString::generate(&mut rand::thread_rng());
+                let start = Instant::now();
+                hash = Argon2::default().hash_password(text.as_bytes(), &salt)
+                    .map_err(|e| AppError::Internal(format!("Argon2 failed: {}", e)))?
+                    .to_string();
+                timings.push(start.elapsed().as_millis() as u128);
+            }
+            format_benchmark_output("argon2id", iterations, &timings, &hash, None)
         }
-        "scrypt" => {
-            format!("For scrypt: install the 'scrypt' crate or use argon2id as a modern alternative.\n\nArgon2id fallback:\n{}",
-                {
-                    use argon2::Argon2;
-                    use argon2::password_hash::{SaltString, PasswordHasher};
-                    let salt = SaltString::generate(&mut rand::thread_rng());
-                    let hash = Argon2::default().hash_password(body.as_bytes(), &salt)
-                        .map_err(|e| AppError::Internal(format!("Argon2 failed: {}", e)))?;
-                    hash.to_string()
-                }
-            )
+        "sha256" => {
+            use sha2::{Digest, Sha256};
+            let mut timings = Vec::new();
+            let mut hash = String::new();
+            for _ in 0..iterations {
+                let start = Instant::now();
+                hash = format!("{:x}", Sha256::digest(text.as_bytes()));
+                timings.push(start.elapsed().as_micros() as u128);
+            }
+            format_benchmark_output("sha256", iterations, &timings, &hash, Some("unit=us".into()))
         }
-        _ => format!("Unknown algorithm: {}. Use: bcrypt, argon2, or scrypt", algo),
+        _ => return Err(AppError::Internal(format!("unknown algorithm '{}'. Supported: bcrypt, argon2, sha256", algo))),
     };
 
     Ok(CommandExecutionResult {
@@ -338,8 +373,33 @@ pub fn hash_benchmark(input: &str) -> Result<CommandExecutionResult, AppError> {
         title: format!("{} Benchmark", algo.to_uppercase()),
         output,
         status: CommandExecutionStatus::Success,
-        summary: format!("{} hash generated", algo),
+        summary: format!("{} benchmark completed over {} iteration(s)", algo, iterations),
     })
+}
+
+fn format_benchmark_output(
+    algo: &str,
+    iterations: usize,
+    timings: &[u128],
+    sample_hash: &str,
+    extra: Option<String>,
+) -> String {
+    let min = timings.iter().min().copied().unwrap_or(0);
+    let max = timings.iter().max().copied().unwrap_or(0);
+    let avg = if timings.is_empty() {
+        0.0
+    } else {
+        timings.iter().sum::<u128>() as f64 / timings.len() as f64
+    };
+    let unit = if matches!(algo, "sha256") { "us" } else { "ms" };
+    let mut output = format!(
+        "Algorithm: {}\nIterations: {}\nMin: {} {}\nAvg: {:.2} {}\nMax: {} {}\nSample hash:\n{}",
+        algo, iterations, min, unit, avg, unit, max, unit, sample_hash
+    );
+    if let Some(extra) = extra {
+        output.push_str(&format!("\n{}", extra));
+    }
+    output
 }
 
 // ============================================================
@@ -546,6 +606,7 @@ lazy_static::lazy_static! {
 }
 
 pub fn crypto_vault(input: &str) -> Result<CommandExecutionResult, AppError> {
+    load_vault_state()?;
     let trimmed = input.trim();
     if trimmed.is_empty() {
         let vault = VAULT.lock().unwrap();
@@ -584,6 +645,7 @@ pub fn crypto_vault(input: &str) -> Result<CommandExecutionResult, AppError> {
                 let value = rest[pos + 1..].trim();
                 let mut vault = VAULT.lock().unwrap();
                 vault.insert(label.to_string(), value.to_string());
+                save_vault_state(&vault)?;
                 Ok(CommandExecutionResult {
                     command_id: "crypto.vault".into(),
                     title: "Vault Set".into(),
@@ -617,6 +679,7 @@ pub fn crypto_vault(input: &str) -> Result<CommandExecutionResult, AppError> {
         "delete" | "del" | "remove" => {
             let mut vault = VAULT.lock().unwrap();
             if vault.remove(rest).is_some() {
+                save_vault_state(&vault)?;
                 Ok(CommandExecutionResult {
                     command_id: "crypto.vault".into(),
                     title: "Vault Delete".into(),
@@ -662,6 +725,7 @@ pub fn crypto_vault(input: &str) -> Result<CommandExecutionResult, AppError> {
             let mut vault = VAULT.lock().unwrap();
             let count = vault.len();
             vault.clear();
+            save_vault_state(&vault)?;
             Ok(CommandExecutionResult {
                 command_id: "crypto.vault".into(),
                 title: "Vault Cleared".into(),
@@ -678,4 +742,30 @@ pub fn crypto_vault(input: &str) -> Result<CommandExecutionResult, AppError> {
             summary: "See output for usage".into(),
         }),
     }
+}
+
+fn vault_file_path() -> PathBuf {
+    std::env::temp_dir().join("devforge-crypto-vault.json")
+}
+
+fn load_vault_state() -> Result<(), AppError> {
+    let path = vault_file_path();
+    if !path.exists() {
+        return Ok(());
+    }
+    let contents = fs::read_to_string(&path)
+        .map_err(|error| AppError::Internal(format!("failed to read vault file {}: {}", path.display(), error)))?;
+    let parsed: HashMap<String, String> = serde_json::from_str(&contents)
+        .map_err(|error| AppError::Internal(format!("failed to parse vault file {}: {}", path.display(), error)))?;
+    let mut vault = VAULT.lock().unwrap();
+    *vault = parsed;
+    Ok(())
+}
+
+fn save_vault_state(vault: &HashMap<String, String>) -> Result<(), AppError> {
+    let path = vault_file_path();
+    let contents = serde_json::to_string_pretty(vault)
+        .map_err(|error| AppError::Internal(format!("failed to serialize vault state: {}", error)))?;
+    fs::write(&path, contents)
+        .map_err(|error| AppError::Internal(format!("failed to write vault file {}: {}", path.display(), error)))
 }

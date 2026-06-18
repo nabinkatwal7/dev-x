@@ -1,7 +1,7 @@
 use crate::{
     error::AppError,
     models::{CommandExecutionResult, CommandExecutionStatus, ExecuteCommandPayload},
-    services::{crypto, data, network, shell, text},
+    services::{crypto, data, design, filesystem, local_ai, mock, network, shell, text},
 };
 
 pub struct CommandExecutor;
@@ -81,6 +81,50 @@ impl CommandExecutor {
             "shell.compose" => shell::docker_compose_generate(&payload.input),
             "shell.ansi-strip" => shell::strip_ansi(&payload.input),
             "shell.exit-code" => shell::exit_code_reference(&payload.input),
+            // === Filesystem Features (061-070) ===
+            "fs.env-audit" => filesystem::env_audit(&payload.input),
+            "fs.duplicate-scan" => filesystem::duplicate_scan(&payload.input),
+            "fs.symlink-matrix" => filesystem::symlink_matrix(&payload.input),
+            "fs.log-tail" => filesystem::log_tail(&payload.input),
+            "fs.file-sentinel" => filesystem::file_sentinel(&payload.input),
+            "fs.hex-inspect" => filesystem::hex_inspector(&payload.input),
+            "fs.batch-rename" => filesystem::batch_rename(&payload.input),
+            "fs.disk-explorer" => filesystem::disk_explorer(&payload.input),
+            "fs.encoding-convert" => filesystem::encoding_convert(&payload.input),
+            "fs.archive-check" => filesystem::archive_integrity(&payload.input),
+            // === Design Features (071-080) ===
+            "design.eyedropper" => design::eyedropper(&payload.input),
+            "design.color-swap" => design::color_swapper(&payload.input),
+            "design.svg-optimize" => design::svg_optimize(&payload.input),
+            "design.type-scale" => design::typography_scale(&payload.input),
+            "design.aspect-ratio" => design::aspect_ratio(&payload.input),
+            "design.layout-css" => design::layout_constructor(&payload.input),
+            "design.mock-data" => design::mock_data(&payload.input),
+            "design.contrast" => design::contrast_check(&payload.input),
+            "design.shadow-gradient" => design::shadow_gradient(&payload.input),
+            "design.font-inventory" => design::font_inventory(&payload.input),
+            // === Local AI Features (081-090) ===
+            "ai.ollama-bridge" => local_ai::ollama_bridge(&payload.input),
+            "ai.error-explain" => local_ai::explain_error_log(&payload.input),
+            "ai.code-optimize" => local_ai::optimize_code(&payload.input),
+            "ai.snippet-search" => local_ai::semantic_snippet_search(&payload.input),
+            "ai.sql-translator" => local_ai::nl_to_sql(&payload.input),
+            "ai.markdown-docs" => local_ai::markdown_docs(&payload.input),
+            "ai.test-scaffold" => local_ai::test_scaffold(&payload.input),
+            "ai.vuln-check" => local_ai::vuln_check(&payload.input),
+            "ai.rename-vars" => local_ai::rename_variables(&payload.input),
+            "ai.offline-dict" => local_ai::offline_dictionary(&payload.input),
+            // === Mock & Testing Features (091-100) ===
+            "mock.http-server" => mock::http_mock_server(&payload.input),
+            "mock.load-test" => mock::http_load_test(&payload.input),
+            "mock.websocket" => mock::websocket_lab(&payload.input),
+            "mock.graphql" => mock::graphql_tools(&payload.input),
+            "mock.grpc" => mock::grpc_tools(&payload.input),
+            "mock.env-matrix" => mock::env_mock_matrix(&payload.input),
+            "mock.rest-collection" => mock::rest_collection(&payload.input),
+            "mock.webhook" => mock::webhook_receiver(&payload.input),
+            "mock.status-codes" => mock::status_code_reference(&payload.input),
+            "mock.cookie-parser" => mock::cookie_parser(&payload.input),
             _ => Err(AppError::Internal(format!(
                 "unknown command id: {}",
                 payload.command_id
