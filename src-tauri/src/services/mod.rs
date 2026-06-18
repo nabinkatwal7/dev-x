@@ -4,6 +4,7 @@ pub mod crypto;
 pub mod data;
 pub mod extension_loader;
 pub mod network;
+pub mod shell;
 pub mod storage;
 pub mod system_metrics;
 pub mod text;

@@ -1,7 +1,7 @@
 use crate::{
     error::AppError,
     models::{CommandExecutionResult, CommandExecutionStatus, ExecuteCommandPayload},
-    services::{crypto, data, network, text},
+    services::{crypto, data, network, shell, text},
 };
 
 pub struct CommandExecutor;
@@ -70,6 +70,17 @@ impl CommandExecutor {
             "clip.whitespace" => text::whitespace_sanitize(&payload.input),
             "clip.redact" => text::redact_data(&payload.input),
             "clip.queue" => text::clip_queue(&payload.input),
+            // === Shell & Snippet Features (051-060) ===
+            "shell.cheatsheet" => shell::shell_cheat_sheet(&payload.input),
+            "shell.git-wizard" => shell::git_reconstruct(&payload.input),
+            "shell.code-vault" => shell::code_vault(&payload.input),
+            "shell.history" => shell::shell_history_search(&payload.input),
+            "shell.alias" => shell::alias_blueprint(&payload.input),
+            "shell.path-translate" => shell::path_translate(&payload.input),
+            "shell.cron" => shell::cron_explain(&payload.input),
+            "shell.compose" => shell::docker_compose_generate(&payload.input),
+            "shell.ansi-strip" => shell::strip_ansi(&payload.input),
+            "shell.exit-code" => shell::exit_code_reference(&payload.input),
             _ => Err(AppError::Internal(format!(
                 "unknown command id: {}",
                 payload.command_id
